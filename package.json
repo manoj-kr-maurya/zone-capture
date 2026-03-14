@@ -1,0 +1,24 @@
+{
+  "name": "run-for-zone",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "start:api": "npm --workspace @run-for-zone/api-gateway run start:dev",
+    "start:runner": "npm --workspace @run-for-zone/runner-service run start:dev",
+    "start:zone": "npm --workspace @run-for-zone/zone-service run start:dev",
+    "lint": "npm run lint --workspaces",
+    "prisma:generate": "npm --workspace @run-for-zone/prisma run generate"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "@types/node": "^20.11.0",
+    "eslint": "^8.56.0",
+    "prettier": "^2.8.8",
+    "@typescript-eslint/parser": "^6.3.0",
+    "@typescript-eslint/eslint-plugin": "^6.3.0"
+  },
+  "packageManager": "npm@10.9.2"
+}

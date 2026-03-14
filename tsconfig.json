@@ -1,0 +1,10 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/shared" },
+    { "path": "./packages/prisma" },
+    { "path": "./packages/api-gateway" },
+    { "path": "./packages/runner-service" },
+    { "path": "./packages/zone-service" }
+  ]
+}
