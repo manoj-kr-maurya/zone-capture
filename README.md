@@ -114,3 +114,9 @@ This section is a detailed log of the work done to build the initial monorepo se
    Then open a PR on GitHub from your fork into the upstream repository.
 
 > Note: This environment cannot directly create GitHub PRs; follow the steps above in your local Git environment.
+
+---
+
+## Next step (optionally requested)
+
+If you want me to add more specific “zone capture” logic (e.g., polygon detection, loop closure detection, or real GPS + geofencing), just say so and I’ll extend the services accordingly.
