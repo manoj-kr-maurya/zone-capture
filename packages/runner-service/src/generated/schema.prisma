@@ -1,0 +1,20 @@
+// Prisma schema for MongoDB used by the Runner Service
+// Note: Set DATABASE_URL in your .env to connect to a MongoDB instance.
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./src/generated"
+}
+
+model Runner {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  path      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

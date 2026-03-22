@@ -4,5 +4,5 @@ export declare class RunnerController {
     private readonly runnerService;
     private readonly logger;
     constructor(runnerService: RunnerService);
-    trackLocation(payload: TrackLocationPayload): import("@run-for-zone/shared").Runner;
+    trackLocation(payload: TrackLocationPayload): Promise<import("@run-for-zone/shared").Runner>;
 }

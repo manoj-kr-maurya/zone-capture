@@ -10,26 +10,56 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RunnerService = void 0;
 const common_1 = require("@nestjs/common");
 const rxjs_1 = require("rxjs");
+const prisma_1 = require("../prisma");
 let RunnerService = RunnerService_1 = class RunnerService {
     constructor() {
         this.logger = new common_1.Logger(RunnerService_1.name);
-        // In-memory cache for demo / initial implementation
-        this.runners = new Map();
+        // In-memory cache for real-time updates
         this.runners$ = new rxjs_1.BehaviorSubject([]);
     }
-    trackLocation(payload) {
-        const existing = this.runners.get(payload.runnerId);
-        const now = new Date().toISOString();
-        const updated = {
-            id: payload.runnerId,
-            name: existing?.name ?? `runner-${payload.runnerId}`,
-            path: [...(existing?.path ?? []), payload.location],
-            updatedAt: now
+    async onModuleInit() {
+        // Load existing runners from database
+        const runners = await prisma_1.prisma.runner.findMany();
+        this.runners$.next(runners.map(r => ({
+            ...r,
+            path: r.path,
+            updatedAt: r.updatedAt.toISOString()
+        })));
+    }
+    async trackLocation(payload) {
+        const existing = await prisma_1.prisma.runner.findUnique({
+            where: { id: payload.runnerId }
+        });
+        const now = new Date();
+        const updated = await prisma_1.prisma.runner.upsert({
+            where: { id: payload.runnerId },
+            update: {
+                path: [...(existing?.path ?? []), payload.location],
+                updatedAt: now
+            },
+            create: {
+                id: payload.runnerId,
+                name: `runner-${payload.runnerId}`,
+                path: [payload.location]
+            }
+        });
+        // Update in-memory cache
+        const currentRunners = this.runners$.value;
+        const index = currentRunners.findIndex(r => r.id === payload.runnerId);
+        const runnerWithPath = {
+            ...updated,
+            path: updated.path,
+            updatedAt: updated.updatedAt.toISOString()
         };
-        this.runners.set(payload.runnerId, updated);
-        this.runners$.next(Array.from(this.runners.values()));
+        if (index >= 0) {
+            currentRunners[index] = runnerWithPath;
+        }
+        else {
+            currentRunners.push(runnerWithPath);
+        }
+        this.runners$.next([...currentRunners]);
         this.logger.debug(`Tracked location for runner ${payload.runnerId}`);
-        return updated;
+        return runnerWithPath;
     }
     getRunners() {
         return this.runners$.asObservable();

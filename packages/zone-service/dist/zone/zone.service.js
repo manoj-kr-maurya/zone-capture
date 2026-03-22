@@ -10,39 +10,71 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ZoneService = void 0;
 const common_1 = require("@nestjs/common");
 const rxjs_1 = require("rxjs");
+const prisma_1 = require("../prisma");
 let ZoneService = ZoneService_1 = class ZoneService {
     constructor() {
         this.logger = new common_1.Logger(ZoneService_1.name);
-        this.zones = new Map();
+        // In-memory cache for real-time updates
         this.zones$ = new rxjs_1.BehaviorSubject([]);
     }
-    createZone(payload) {
-        const id = `zone-${Date.now()}`;
-        const now = new Date().toISOString();
-        const zone = {
-            id,
-            ownerId: payload.ownerId,
-            polygon: payload.polygon,
-            capturedAt: now
-        };
-        this.zones.set(id, zone);
-        this.zones$.next(Array.from(this.zones.values()));
-        this.logger.debug(`Created zone ${id} for owner ${payload.ownerId}`);
-        return zone;
+    async onModuleInit() {
+        // Load existing zones from database
+        const zones = await prisma_1.prisma.zone.findMany();
+        this.zones$.next(zones.map(z => ({
+            ...z,
+            polygon: z.polygon,
+            capturedAt: z.capturedAt.toISOString()
+        })));
     }
-    captureZone(payload) {
-        const zone = this.zones.get(payload.zoneId);
-        if (!zone)
-            return null;
-        const updated = {
+    async createZone(payload) {
+        const zone = await prisma_1.prisma.zone.create({
+            data: {
+                ownerId: payload.ownerId,
+                polygon: payload.polygon
+            }
+        });
+        // Update in-memory cache
+        const currentZones = this.zones$.value;
+        currentZones.push({
             ...zone,
-            ownerId: payload.runnerId,
-            capturedAt: new Date().toISOString()
+            polygon: zone.polygon,
+            capturedAt: zone.capturedAt.toISOString()
+        });
+        this.zones$.next([...currentZones]);
+        this.logger.debug(`Created zone ${zone.id} for owner ${payload.ownerId}`);
+        return {
+            ...zone,
+            polygon: zone.polygon,
+            capturedAt: zone.capturedAt.toISOString()
         };
-        this.zones.set(payload.zoneId, updated);
-        this.zones$.next(Array.from(this.zones.values()));
+    }
+    async captureZone(payload) {
+        const updated = await prisma_1.prisma.zone.update({
+            where: { id: payload.zoneId },
+            data: {
+                ownerId: payload.runnerId,
+                capturedAt: new Date()
+            }
+        }).catch(() => null);
+        if (!updated)
+            return null;
+        // Update in-memory cache
+        const currentZones = this.zones$.value;
+        const index = currentZones.findIndex(z => z.id === payload.zoneId);
+        if (index >= 0) {
+            currentZones[index] = {
+                ...updated,
+                polygon: updated.polygon,
+                capturedAt: updated.capturedAt.toISOString()
+            };
+            this.zones$.next([...currentZones]);
+        }
         this.logger.debug(`Zone ${payload.zoneId} captured by ${payload.runnerId}`);
-        return updated;
+        return {
+            ...updated,
+            polygon: updated.polygon,
+            capturedAt: updated.capturedAt.toISOString()
+        };
     }
     getZones() {
         return this.zones$.asObservable();
