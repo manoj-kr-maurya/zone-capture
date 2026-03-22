@@ -9,8 +9,7 @@
     "start:api": "npm --workspace @run-for-zone/api-gateway run start:dev",
     "start:runner": "npm --workspace @run-for-zone/runner-service run start:dev",
     "start:zone": "npm --workspace @run-for-zone/zone-service run start:dev",
-    "lint": "npm run lint --workspaces",
-    "prisma:generate": "npm --workspace @run-for-zone/prisma run generate"
+    "lint": "npm run lint --workspaces"
   },
   "devDependencies": {
     "typescript": "^5.3.3",

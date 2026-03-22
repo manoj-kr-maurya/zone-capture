@@ -1,0 +1,19 @@
+// Prisma schema for MongoDB used by the Zone Service
+// Note: Set DATABASE_URL in your .env to connect to a MongoDB instance.
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./src/generated"
+}
+
+model Zone {
+  id         String   @id @map("_id") @default(auto()) @db.ObjectId
+  ownerId    String   @db.ObjectId
+  polygon    Json
+  capturedAt DateTime @default(now())
+}
